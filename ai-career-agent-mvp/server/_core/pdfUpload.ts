@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import multer from "multer";
-const pdfParse = require("pdf-parse");
+// @ts-ignore - pdf-parse has no default export in its types but works at runtime
+import pdfParse from "pdf-parse";
 
 // Configure multer for memory storage (no saving to disk)
 const upload = multer({

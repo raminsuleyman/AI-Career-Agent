@@ -34,7 +34,8 @@ export function registerGuestAuthRoutes(app: Express) {
       res.redirect(302, "/dashboard");
     } catch (error) {
       console.error("[Guest Auth] Callback error:", error);
-      res.status(500).json({ error: "Authentication failed" });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ error: "Authentication failed", details: errorMessage });
     }
   });
 }

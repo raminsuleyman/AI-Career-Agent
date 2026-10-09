@@ -1,9 +1,9 @@
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
+import { GoogleGenAI, Type } from "@google/genai";
 import type { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "sk-dummy",
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY || "dummy",
 });
 
 export async function generateStructured<T extends z.ZodTypeAny>(params: {
@@ -12,24 +12,35 @@ export async function generateStructured<T extends z.ZodTypeAny>(params: {
   schema: T;
   schemaName: string;
   schemaDescription: string;
-}) {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY is not set in the environment variables.");
+}): Promise<z.infer<T>> {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is not set in the environment variables.");
   }
-  
-  const completion = await (openai.beta as any).chat.completions.parse({
-    model: "gpt-4o-mini", // or gpt-4o
-    messages: [
-      { role: "system", content: params.systemPrompt },
-      { role: "user", content: params.userPrompt },
+
+  const jsonSchema = zodToJsonSchema(params.schema as any, { name: params.schemaName });
+  const schemaForGemini = (jsonSchema as any).definitions?.[params.schemaName] ?? jsonSchema;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { text: `${params.systemPrompt}\n\n${params.userPrompt}` },
+        ],
+      },
     ],
-    response_format: zodResponseFormat(params.schema, params.schemaName),
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: schemaForGemini,
+    },
   });
 
-  const parsed = completion.choices[0]?.message?.parsed;
-  if (!parsed) {
-    throw new Error("Failed to generate structured response from OpenAI.");
+  const text = response.text ?? "";
+  try {
+    const jsonText = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+    return JSON.parse(jsonText) as z.infer<T>;
+  } catch {
+    throw new Error(`Failed to parse Gemini response as JSON: ${text.substring(0, 200)}`);
   }
-
-  return parsed as z.infer<T>;
 }

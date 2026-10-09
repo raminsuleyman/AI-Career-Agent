@@ -3,7 +3,7 @@ import multer from "multer";
 import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+const { PDFParse } = require("pdf-parse");
 
 // Configure multer for memory storage (no saving to disk)
 const upload = multer({
@@ -28,7 +28,9 @@ export function registerPdfUploadRoute(app: Express) {
       }
 
       // Parse the PDF
-      const pdfData = await pdfParse(req.file.buffer);
+      const parser = new PDFParse({ data: req.file.buffer });
+      const pdfData = await parser.getText();
+      await parser.destroy();
       
       // Return the extracted text
       res.json({ text: pdfData.text });

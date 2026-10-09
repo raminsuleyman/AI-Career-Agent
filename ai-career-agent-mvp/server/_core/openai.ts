@@ -17,7 +17,7 @@ export async function generateStructured<T extends z.ZodTypeAny>(params: {
     throw new Error("OPENAI_API_KEY is not set in the environment variables.");
   }
   
-  const completion = await openai.beta.chat.completions.parse({
+  const completion = await (openai.beta as any).chat.completions.parse({
     model: "gpt-4o-mini", // or gpt-4o
     messages: [
       { role: "system", content: params.systemPrompt },

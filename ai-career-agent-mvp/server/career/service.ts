@@ -68,7 +68,7 @@ export async function createAnalysis(userId: number, input: { text: string; targ
       level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
       evidence: z.string(),
     })),
-    candidateLevel: z.enum(["student", "junior", "mid", "senior"]),
+    candidateLevel: z.enum(["student", "junior", "unknown"]),
     summary: z.string(),
   });
 
@@ -79,7 +79,7 @@ Hər bacarıq üçün:
 - "slug": yuxarıdakı siyahıdan biri
 - "level": 1 (başlanğıc/nəzəri), 2 (orta/praktik təcrübə), 3 (irəli/düşünülmüş arxitektura)
 - "evidence": CV-dən bu bacarığı sübut edən 1-2 cümləlik sitat və ya qısa izah.
-Həmçinin namizədin təcrübə səviyyəsini (student, junior, mid, senior) və CV haqqında 2-3 cümləlik qısa xülasə (summary) yaz.`,
+Həmçinin namizədin təcrübə səviyyəsini (student, junior, unknown) və CV haqqında 2-3 cümləlik qısa xülasə (summary) yaz.`,
     userPrompt: `Hədəf rol: ${input.targetRole}\nCV Mətni:\n${text.substring(0, 15000)}`,
     schema: extractionSchema,
     schemaName: "cv_analysis",
@@ -103,7 +103,7 @@ Həmçinin namizədin təcrübə səviyyəsini (student, junior, mid, senior) v�
     skills: extracted,
     highlights: [] as string[],
     roleReadiness: readiness,
-    source: "ai" as const,
+    source: "real" as const,
   };
   try {
     await db.transaction(async (tx) => {
@@ -163,7 +163,7 @@ Geri qaytardığın strukturda tam olaraq 7 gün olmalıdır. "query" sahəsinə
 
   const plan = aiResult.days;
   await db.transaction(async (tx) => {
-    await tx.insert(roadmaps).values({ id, userId, analysisId, targetRole: analysis.targetRole, source: "ai" });
+    await tx.insert(roadmaps).values({ id, userId, analysisId, targetRole: analysis.targetRole, source: "real" });
     await tx.insert(roadmapTasks).values(plan.flatMap((day) => day.tasks.map((task, position) => ({
       id: randomUUID(), roadmapId: id, day: day.day, position: position + 1, skillSlug: task.skill,
       title: task.title, description: task.description, estMinutes: task.minutes, resourceQuery: task.query, completed: false,
@@ -221,7 +221,7 @@ Hər sual üçün qısa bir 'rubric' (cavabı qiymətləndirmək üçün meyarla
 
   const questions = aiResult.questions;
   await db.transaction(async (tx) => {
-    await tx.insert(interviews).values({ id, userId, analysisId, targetRole: analysis.targetRole, status: "in_progress", source: "ai" });
+    await tx.insert(interviews).values({ id, userId, analysisId, targetRole: analysis.targetRole, status: "in_progress", source: "real" });
     await tx.insert(interviewQuestions).values(questions.map((question, index) => ({ id: randomUUID(), interviewId: id, position: index + 1, ...question })));
   });
   return getInterview(userId, id);
@@ -299,7 +299,7 @@ Sonda ümumi 'feedback' (güclü cəhətlər, inkişaf nöqtələri, növbəti a
     }
     await tx.update(interviews).set({ status: "completed", interviewScore, readinessScore, feedback, completedAt: new Date() }).where(eq(interviews.id, interviewId));
   });
-  return { interviewScore, roleReadiness: analysis.roleReadiness, readinessScore, feedback, source: "ai" as const };
+  return { interviewScore, roleReadiness: analysis.roleReadiness, readinessScore, feedback, source: "real" as const };
 }
 
 export async function deleteMyData(userId: number) {

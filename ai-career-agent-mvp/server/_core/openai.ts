@@ -1,6 +1,8 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import type { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
+
+export const isAiEnabled = Boolean(process.env.GEMINI_API_KEY);
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || "dummy",
@@ -14,7 +16,7 @@ export async function generateStructured<T extends z.ZodTypeAny>(params: {
   schemaDescription: string;
 }): Promise<z.infer<T>> {
   if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not set in the environment variables.");
+    throw new Error("AI_DISABLED");
   }
 
   const jsonSchema = zodToJsonSchema(params.schema as any, { name: params.schemaName });

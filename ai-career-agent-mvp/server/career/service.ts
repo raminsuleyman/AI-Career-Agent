@@ -60,38 +60,50 @@ export async function createAnalysis(userId: number, input: { text: string; targ
 
   const text = input.text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ").trim();
   
-  // Real AI extraction using OpenAI
-  const skillSlugs = Object.keys(skillCatalog).join(", ");
-  const extractionSchema = z.object({
-    skills: z.array(z.object({
-      slug: z.enum(["html", "css", "javascript", "typescript", "react", "node", "python", "sql", "git", "testing", "figma", "api"]),
-      level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-      evidence: z.string(),
-    })),
-    candidateLevel: z.enum(["student", "junior", "unknown"]),
-    summary: z.string(),
-  });
+  // AI or fallback extraction
+  let extracted: ReturnType<typeof extractSkills>;
+  let summary: string;
+  let candidateLevel: "student" | "junior" | "unknown";
 
-  const aiResult = await generateStructured({
-    systemPrompt: `Sən peşəkar HR və texniki müsahibəçisən. Sənə namizədin CV mətni veriləcək. Məqsədin CV-dən namizədin texniki bacarıqlarını çıxarmaqdır.
+  try {
+    const skillSlugs = Object.keys(skillCatalog).join(", ");
+    const extractionSchema = z.object({
+      skills: z.array(z.object({
+        slug: z.enum(["html", "css", "javascript", "typescript", "react", "node", "python", "sql", "git", "testing", "figma", "api"]),
+        level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+        evidence: z.string(),
+      })),
+      candidateLevel: z.enum(["student", "junior", "unknown"]),
+      summary: z.string(),
+    });
+    const aiResult = await generateStructured({
+      systemPrompt: `Sən peşəkar HR və texniki müsahibəçisən. Sənə namizədin CV mətni veriləcək. Məqsədin CV-dən namizədin texniki bacarıqlarını çıxarmaqdır.
 Diqqət: Yalnız bu bacarıqlardan (slug) birini seçə bilərsən: ${skillSlugs}.
 Hər bacarıq üçün:
 - "slug": yuxarıdakı siyahıdan biri
 - "level": 1 (başlanğıc/nəzəri), 2 (orta/praktik təcrübə), 3 (irəli/düşünülmüş arxitektura)
 - "evidence": CV-dən bu bacarığı sübut edən 1-2 cümləlik sitat və ya qısa izah.
 Həmçinin namizədin təcrübə səviyyəsini (student, junior, unknown) və CV haqqında 2-3 cümləlik qısa xülasə (summary) yaz.`,
-    userPrompt: `Hədəf rol: ${input.targetRole}\nCV Mətni:\n${text.substring(0, 15000)}`,
-    schema: extractionSchema,
-    schemaName: "cv_analysis",
-    schemaDescription: "CV-dən texniki bacarıqların, səviyyənin və xülasənin çıxarılması",
-  });
-
-  const extracted = aiResult.skills;
+      userPrompt: `Hədəf rol: ${input.targetRole}\nCV Mətni:\n${text.substring(0, 15000)}`,
+      schemaName: "cv_analysis",
+      schemaDescription: "CV-dən texniki bacarıqların, səviyyənin və xülasənin çıxarılması",
+      schema: extractionSchema,
+    });
+    extracted = aiResult.skills as ReturnType<typeof extractSkills>;
+    summary = aiResult.summary;
+    candidateLevel = aiResult.candidateLevel;
+  } catch {
+    // Fallback to keyword-based extraction when AI is not available
+    extracted = extractSkills(text);
+    summary = extracted.length
+      ? `CV mətnində ${extracted.length} bacarıq aşkarlandı.`
+      : "CV mətnindən bacarıqlar aşkarlanmadı. Dashboard-da əl ilə əlavə edə bilərsiniz.";
+    candidateLevel = /internship|iş təcrübəsi|work experience/i.test(text) ? "junior" : "student";
+  }
   const id = randomUUID();
   const cvId = randomUUID();
   const readiness = computeRoleReadiness(extracted, input.targetRole);
-  const summary = aiResult.summary;
-  const candidateLevel = aiResult.candidateLevel;
+
   const analysis = {
     id,
     userId,
@@ -151,17 +163,21 @@ export async function createRoadmap(userId: number, analysisId: string) {
     })).length(7),
   });
 
-  const aiResult = await generateStructured({
-    systemPrompt: `Sən peşəkar karyera koçu və texniki mentorsan. Namizədin hədəf rolu və çatışmayan bacarıqları (skill gaps) əsasında intensiv 7 günlük (hər gün üçün 2-3 tapşırıq) öyrənmə və tətbiq planı hazırla.
+  let plan: Array<{ day: number; tasks: Array<{ skill: string; title: string; description: string; minutes: number; query: string }> }>;
+  try {
+    const aiResult = await generateStructured({
+      systemPrompt: `Sən peşəkar karyera koçu və texniki mentorsan. Namizədin hədəf rolu və çatışmayan bacarıqları (śkill gaps) əsasında intensiv 7 günlük (hər gün üçün 2-3 tapşırıq) öyrənmə və tətbiq planı hazırla.
 Tapşırıqlar konkret olmalıdır: nəzəriyyə oxumaq əvəzinə kiçik kod yazmaq və ya praktik layihə hissəsi qurmaq.
 Geri qaytardığın strukturda tam olaraq 7 gün olmalıdır. "query" sahəsinə google/youtube-da axtarış üçün qısa ingiliscə açar sözlər yaz.`,
-    userPrompt: `Hədəf rol: ${analysis.targetRole}\nÇatışmayan bacarıqlar: ${JSON.stringify(gaps)}\nAşkarlanan bacarıqlar: ${JSON.stringify(analysis.skills)}`,
-    schema: roadmapSchema,
-    schemaName: "roadmap",
-    schemaDescription: "7 günlük öyrənmə planı",
-  });
-
-  const plan = aiResult.days;
+      userPrompt: `Hədəf rol: ${analysis.targetRole}\nÇatışmayan bacarıqlar: ${JSON.stringify(gaps)}\nAşkarlanan bacarıqlar: ${JSON.stringify(analysis.skills)}`,
+      schema: roadmapSchema,
+      schemaName: "roadmap",
+      schemaDescription: "7 günlük öyrənmə planı",
+    });
+    plan = aiResult.days;
+  } catch {
+    plan = roadmapPlan(analysis.targetRole as RoleSlug, analysis.skills as Array<{ slug: SkillSlug; level: number }>);
+  }
   await db.transaction(async (tx) => {
     await tx.insert(roadmaps).values({ id, userId, analysisId, targetRole: analysis.targetRole, source: "real" });
     await tx.insert(roadmapTasks).values(plan.flatMap((day) => day.tasks.map((task, position) => ({
@@ -205,21 +221,25 @@ export async function createInterview(userId: number, analysisId: string) {
     })).length(5),
   });
 
-  const aiResult = await generateStructured({
-    systemPrompt: `Sən çətin və dəqiq bir texniki müsahibəçisən. Namizədin hədəf rolu və CV analizi sənə veriləcək. Məqsədin tam olaraq 5 müsahibə sualı hazırlamaqdır:
+  let questions: Array<{ type: "technical" | "experience" | "behavioral" | "scenario"; skillSlug: string | null; question: string; rubric: string }>;
+  try {
+    const aiResult = await generateStructured({
+      systemPrompt: `Sən çətin və dəqiq bir texniki müsahibəçisən. Namizədin hədəf rolu və CV analizi sənə veriləcək. Məqsədin tam olaraq 5 müsahibə sualı hazırlamaqdır:
 - 1 texniki sual (namizədin yaxşı bildiyi bir bacarıq haqqında)
 - 1 texniki sual (namizədin zəif olduğu/çatışmayan bir bacarıq haqqında)
 - 1 təcrübə sualı (CV-dəki qeydlərə əsaslanan)
 - 1 davranış (behavioral) sualı
 - 1 ssenari sualı (namizədin hədəf roluna uyğun real iş problemi)
 Hər sual üçün qısa bir 'rubric' (cavabı qiymətləndirmək üçün meyarlar) ver.`,
-    userPrompt: `Hədəf rol: ${analysis.targetRole}\nÇatışmayan bacarıqlar: ${JSON.stringify(gaps)}\nAşkarlanan bacarıqlar: ${JSON.stringify(analysis.skills)}`,
-    schema: interviewSchema,
-    schemaName: "interview_questions",
-    schemaDescription: "5 ədəd müsahibə sualı",
-  });
-
-  const questions = aiResult.questions;
+      userPrompt: `Hədəf rol: ${analysis.targetRole}\nÇatışmayan bacarıqlar: ${JSON.stringify(gaps)}\nAşkarlanan bacarıqlar: ${JSON.stringify(analysis.skills)}`,
+      schema: interviewSchema,
+      schemaName: "interview_questions",
+      schemaDescription: "5 ədəd müsahibə sualı",
+    });
+    questions = aiResult.questions;
+  } catch {
+    questions = questionsFor(analysis.targetRole as RoleSlug, analysis.skills as Array<{ slug: SkillSlug; level: number }>, gaps);
+  }
   await db.transaction(async (tx) => {
     await tx.insert(interviews).values({ id, userId, analysisId, targetRole: analysis.targetRole, status: "in_progress", source: "real" });
     await tx.insert(interviewQuestions).values(questions.map((question, index) => ({ id: randomUUID(), interviewId: id, position: index + 1, ...question })));
@@ -269,29 +289,45 @@ export async function completeInterview(userId: number, interviewId: string) {
     }),
   });
 
-  const aiResult = await generateStructured({
-    systemPrompt: `Sən mütəxəssis texniki müsahibəçisən. Sənə namizədə verilən müsahibə sualları və onun cavabları göndəriləcək. 
+  let scores: Array<{ questionId: string; score: number; strength: string; improvement: string }>;
+  let feedback: { strengths: string[]; improvements: string[]; nextSteps: string[] };
+
+  try {
+    const aiResult = await generateStructured({
+      systemPrompt: `Sən mütəxəssis texniki müsahibəçisən. Sənə namizədə verilən müsahibə sualları və onun cavabları göndəriləcək. 
 Hər bir cavabı yoxla (10 ballıq sistemlə) və hər sual üçün: 'score', 'strength' (nə yaxşı idi), 'improvement' (nə çatışmırdı) qeyd et. 
 Əgər namizəd sualı keçibsə (skipped: true) və ya heç nə yazmayıbsa, score: 0 ver və improvement-də bunu vurğula.
 Sonda ümumi 'feedback' (güclü cəhətlər, inkişaf nöqtələri, növbəti addımlar) ver.`,
-    userPrompt: `Suallar və Cavablar:\n${JSON.stringify(questions.map(q => ({
-      questionId: q.id,
-      question: q.question,
-      rubric: q.rubric,
-      answer: answerMap.get(q.id)?.answer || "",
-      skipped: answerMap.get(q.id)?.skipped || false,
-    })))}\n\nDiqqət: Yalnız göndərilən sual ID-ləri (questionId) istifadə edərək qaytar.`,
-    schema: evaluationSchema,
-    schemaName: "interview_evaluation",
-    schemaDescription: "Müsahibə cavablarının qiymətləndirilməsi və ümumi feedback",
-  });
-
-  const scores = aiResult.evaluations;
+      userPrompt: `Suallar və Cavablar:\n${JSON.stringify(questions.map(q => ({
+        questionId: q.id,
+        question: q.question,
+        rubric: q.rubric,
+        answer: answerMap.get(q.id)?.answer || "",
+        skipped: answerMap.get(q.id)?.skipped || false,
+      })))}\n\nDiqqət: Yalnız göndərilən sual ID-ləri (questionId) istifadə edərək qaytar.`,
+      schema: evaluationSchema,
+      schemaName: "interview_evaluation",
+      schemaDescription: "Müsahibə cavablarının qiymətləndirilməsi və ümumi feedback",
+    });
+    scores = aiResult.evaluations;
+    feedback = aiResult.feedback;
+  } catch {
+    scores = questions.map((q) => {
+      const answer = answerMap.get(q.id);
+      if (!answer || answer.skipped || !answer.answer?.trim()) return { questionId: q.id, score: 0, strength: "", improvement: "Suala keçildi; bu mövzu roadmap-da möhkəmləndirilsin." };
+      const score = Math.max(0, Math.min(10, Math.round(answer.answer.length / 100) + 3));
+      return { questionId: q.id, score, strength: answer.answer.length >= 120 ? "Cavabda konkret izah və nümunə var." : "Cavab təqdim edilib.", improvement: answer.answer.length < 120 ? "Daha ətraflı cavab yazın." : "Trade-off və ölçülə bilən nəticəni dəqiqləşdirin." };
+    });
+    feedback = {
+      strengths: ["Cavablarınız təcrübə və öyrənmə yanaşmanızı göstərir."],
+      improvements: ["Texniki cavablarda qərar və trade-off-ları qeyd edin."],
+      nextSteps: ["Roadmap-dakı yüksək prioritetli task-ları tamamlayın."],
+    };
+  }
   const interviewScore = Math.round(scores.reduce((sum, item) => sum + item.score, 0) / Math.max(questions.length, 1) * 10);
   const analysis = await getAnalysis(userId, session[0].analysisId);
   if (!analysis) return null;
   const readinessScore = Math.round(interviewScore * 0.6 + analysis.roleReadiness * 0.4);
-  const feedback = aiResult.feedback;
   
   await db.transaction(async (tx) => {
     for (const item of scores) {

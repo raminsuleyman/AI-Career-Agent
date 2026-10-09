@@ -4,6 +4,7 @@ import { createServer } from "http";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerGoogleAuthRoutes } from "./googleAuth";
+import { registerGuestAuthRoutes } from "./guestAuth";
 import { publicPlatformScript } from "./publicConfig";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -21,6 +22,7 @@ async function startServer() {
   });
   registerOAuthRoutes(app);
   registerGoogleAuthRoutes(app);
+  registerGuestAuthRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",

@@ -1,0 +1,25 @@
+import { useMemo } from "react";
+import { useLocation } from "wouter";
+import { ArrowRight, Check, CheckCircle2, Clock3, Sparkles } from "lucide-react";
+import { AppShell, DemoBanner, PageGuard, SearchResource, SectionHeading } from "@/components/career/CareerUI";
+import { useCareer } from "@/context/CareerContext";
+
+export default function Roadmap() {
+  const [, setLocation] = useLocation();
+  const { roadmap, generateRoadmap, toggleTask, startInterview } = useCareer();
+  const progress = useMemo(() => {
+    const tasks = roadmap?.flatMap((day) => day.tasks) ?? [];
+    const completed = tasks.filter((task) => task.completed).length;
+    return { completed, total: tasks.length, percent: tasks.length ? Math.round((completed / tasks.length) * 100) : 0 };
+  }, [roadmap]);
+
+  return <PageGuard><AppShell><DemoBanner />
+    <SectionHeading eyebrow="Öyrənmə planı" title="7 günlük fokus roadmap" description="Hər gün 2–3 kiçik addım. Məqsəd mükəmməllik yox, portfolio və müsahibə üçün görünən irəliləyişdir." />
+    {!roadmap ? <div className="mx-auto max-w-2xl rounded-2xl border border-dashed border-border bg-card p-10 text-center"><Sparkles className="mx-auto mb-4 size-7 text-accent" /><h2 className="text-xl font-semibold">Roadmap hələ yaradılmayıb</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">Hədəf rolunuzdakı skill gap-lərə əsaslanan 7 günlük demo planı bir kliklə yaradın.</p><button type="button" onClick={generateRoadmap} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white">Roadmap yarat <ArrowRight className="size-4" /></button></div> : <>
+      <section className="mb-7 rounded-2xl border border-border bg-card p-5 sm:p-6"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-medium uppercase tracking-[0.14em] text-accent">İrəliləyiş</p><h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em]">{progress.completed} / {progress.total} task tamamlandı</h2><p className="mt-1 text-sm text-muted-foreground">Sabit temp və kiçik görünən nəticə əsasdır.</p></div><span className="text-4xl font-semibold tracking-[-0.06em] text-accent">{progress.percent}%</span></div><div className="mt-5 h-2 overflow-hidden rounded-full bg-secondary"><span className="block h-full rounded-full bg-primary transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${progress.percent}%` }} /></div></section>
+      {progress.percent === 100 && <section className="mb-7 flex flex-col justify-between gap-4 rounded-2xl border border-success/30 bg-success/10 p-5 sm:flex-row sm:items-center"><div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" /><div><h2 className="font-semibold text-success">Roadmap tamamlandı</h2><p className="mt-1 text-sm text-secondary-foreground">İndi yeni biliklərinizi mock müsahibədə sınayın.</p></div></div><button type="button" onClick={() => { startInterview(); setLocation("/interview"); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white">Mock müsahibəyə başla <ArrowRight className="size-4" /></button></section>}
+      <section className="mx-auto max-w-3xl space-y-5">{roadmap.map((day) => <div key={day.day} className="grid gap-3 md:grid-cols-[92px_minmax(0,1fr)]"><div className="pt-2 md:text-right"><p className="text-sm font-semibold text-accent">Gün {day.day}</p><p className="mt-1 text-xs text-muted-foreground">{day.focus}</p></div><div className="space-y-3">{day.tasks.map((task) => <div key={task.id} id={`skill-${task.skillSlug}`} className={`flex items-start gap-3 rounded-xl border p-4 transition ${task.completed ? "border-success/20 bg-success/[0.04]" : "border-border bg-card"}`}><button type="button" onClick={() => toggleTask(task.id)} className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border transition ${task.completed ? "border-success bg-success text-background" : "border-muted-foreground"}`} aria-label={`${task.title} tamamlandı kimi işarələ`}>{task.completed && <Check className="size-3.5" strokeWidth={3} />}</button><div className="min-w-0 flex-1"><h3 className={`font-medium transition ${task.completed ? "text-muted-foreground line-through" : ""}`}>{task.title}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{task.description}</p><div className="mt-3 flex items-center gap-4"><span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Clock3 className="size-3.5" />~{task.estMinutes} dəq</span><SearchResource query={task.resourceQuery} /></div></div></div>)}</div></div>)}</section>
+      <div className="sticky bottom-3 mt-8 rounded-2xl border border-border bg-background/95 p-3 shadow-xl backdrop-blur md:hidden"><button type="button" onClick={() => { startInterview(); setLocation("/interview"); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white">Müsahibəyə keç <ArrowRight className="size-4" /></button></div>
+    </>}
+  </AppShell></PageGuard>;
+}

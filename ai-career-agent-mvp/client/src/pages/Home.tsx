@@ -119,26 +119,31 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-background text-foreground">
-      <header className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 md:px-6">
+    <div className="relative min-h-screen overflow-hidden bg-background text-foreground bg-grid-pattern">
+      <div className="absolute inset-0 bg-background/90" />
+      <div className="absolute left-1/2 top-0 -z-10 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-primary/20 blur-[120px] mix-blend-screen" />
+      
+      <header className="relative z-10 mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 md:px-6">
         <BrandMark />
         <div className="flex items-center gap-3">
-          <a href="/api/auth/guest" className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-medium text-white transition hover:bg-[#4672ff]">
-            <svg className="size-3.5" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <a href="/api/auth/guest" className="group inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-5 py-2.5 text-xs font-semibold text-primary transition-all hover:bg-primary hover:text-white hover:scale-105 hover:shadow-[0_0_20px_-3px_rgba(47,93,255,0.4)]">
             Sınaq üçün daxil ol
+            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
           </a>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-8 md:px-6 md:pt-14">
+      <main className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-16 pt-8 md:px-6 md:pt-14">
         <section className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
-          <div className="max-w-xl">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium text-accent"><Sparkles className="size-3.5" /> Internship axtarışında aydın yol xəritəsi</div>
-            <h1 className="text-balance text-4xl font-semibold tracking-[-0.065em] md:text-6xl md:leading-[1.02]">Sənə uyğun təcrübəni tap. <span className="text-accent">Nəyin çatışmadığını bil.</span> Hazır ol.</h1>
+          <div className="max-w-xl animate-slide-up" style={{ animationDelay: "0.1s" }}>
+            <div className="mb-6 inline-flex animate-pulse-glow items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium text-accent"><Sparkles className="size-3.5" /> Internship axtarışında aydın yol xəritəsi</div>
+            <h1 className="text-balance text-4xl font-semibold tracking-[-0.065em] md:text-6xl md:leading-[1.02]">
+              Sənə uyğun təcrübəni tap. <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">Nəyin çatışmadığını bil.</span> Hazır ol.
+            </h1>
             <p className="mt-6 max-w-lg text-pretty text-base leading-7 text-secondary-foreground md:text-lg">CV-nizdən bacarıqları müəyyənləşdirin, uyğun internship-ləri görün, 7 günlük inkişaf planı qurun və müsahibəyə hazır olduğunuzu yoxlayın.</p>
             <div className="mt-8 grid max-w-md grid-cols-3 gap-3">
-              {[["12", "demo elan"], ["7 gün", "fokus planı"], ["5 sual", "mock müsahibə"]].map(([value, label]) => (
-                <div key={label} className="rounded-xl border border-border bg-card px-3 py-3">
-                  <strong className="block text-lg font-semibold tracking-[-0.04em]">{value}</strong>
+              {[["12", "demo elan"], ["7 gün", "fokus planı"], ["5 sual", "mock müsahibə"]].map(([value, label], i) => (
+                <div key={label} className="group rounded-xl border border-border/50 glassmorphism px-3 py-3 transition-colors hover:border-primary/50 hover:bg-card/80 animate-slide-up" style={{ animationDelay: \`\${0.2 + i * 0.1}s\` }}>
+                  <strong className="block text-lg font-semibold tracking-[-0.04em] transition-transform group-hover:scale-105 group-hover:text-accent origin-left">{value}</strong>
                   <span className="mt-0.5 block text-[11px] text-muted-foreground">{label}</span>
                 </div>
               ))}
@@ -180,9 +185,9 @@ export default function Home() {
                   )}
                   <div className="mt-5"><label className="mb-2 block text-xs font-medium text-secondary-foreground">Hədəf rol</label><RoleSelect className="w-full" /></div>
                   {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
-                  <button type="button" disabled={Boolean(validation) || createAnalysis.isPending} onClick={submit} aria-describedby={validation ? "submit-reason" : undefined} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white transition hover:bg-[#4672ff] disabled:cursor-not-allowed disabled:opacity-45">
+                  <button type="button" disabled={Boolean(validation) || createAnalysis.isPending} onClick={submit} aria-describedby={validation ? "submit-reason" : undefined} className="group mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#5b83ff] px-4 py-3 text-sm font-medium text-white shadow-lg shadow-primary/25 transition-all hover:scale-[1.02] hover:shadow-primary/40 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50">
                     {createAnalysis.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                    Analiz et <ArrowRight className="size-4" />
+                    Analiz et <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                   </button>
                   {validation && <p id="submit-reason" className="mt-2 text-center text-xs text-muted-foreground">{validation}</p>}
                   <button type="button" onClick={() => { setMode("text"); setCvText(demoCvText); setError(""); }} className="mt-4 w-full text-center text-xs text-accent hover:underline">Demo CV mətni ilə tanış olun</button>
@@ -192,7 +197,21 @@ export default function Home() {
             </div>
           </section>
         </section>
-        <section className="mt-20 border-t border-border pt-8"><p className="mb-5 text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">Bu axında nə alacaqsınız?</p><div className="grid gap-3 md:grid-cols-3">{[["01", "Uyğunluq", "Bacarıqlarınıza uyğun demo internship-ləri görün."], ["02", "Prioritet", "Hədəf rol üçün ən vacib skill gap-ləri anlayın."], ["03", "Hazırlıq", "Plan və mock müsahibə ilə növbəti addımı müəyyən edin."]].map(([number, title, text]) => <div key={number} className="flex gap-4 rounded-xl border border-border bg-card p-5"><span className="text-sm font-semibold text-accent">{number}</span><div><h3 className="font-medium">{title}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{text}</p></div></div>)}</div></section>
+        <section className="mt-20 border-t border-border/50 pt-12">
+          <p className="mb-8 text-center text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">Bu axında nə alacaqsınız?</p>
+          <div className="grid gap-4 md:grid-cols-3">
+            {[["01", "Uyğunluq", "Bacarıqlarınıza uyğun demo internship-ləri görün."], ["02", "Prioritet", "Hədəf rol üçün ən vacib skill gap-ləri anlayın."], ["03", "Hazırlıq", "Plan və mock müsahibə ilə növbəti addımı müəyyən edin."]].map(([number, title, text], i) => (
+              <div key={number} className="group relative overflow-hidden rounded-2xl border border-border/50 glassmorphism p-6 transition-all hover:border-primary/40 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/10 animate-slide-up" style={{ animationDelay: \`\${0.4 + i * 0.15}s\` }}>
+                <div className="absolute -right-4 -top-4 size-24 rounded-full bg-primary/10 blur-2xl transition-transform group-hover:scale-150" />
+                <span className="relative z-10 block text-2xl font-bold text-primary/40 transition-colors group-hover:text-primary">{number}</span>
+                <div className="relative z-10 mt-4">
+                  <h3 className="font-semibold text-foreground">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
       <footer className="border-t border-border px-4 py-6 text-center text-xs text-muted-foreground">Career Agent · məlumatlı növbəti addım üçün platforma</footer>
     </div>

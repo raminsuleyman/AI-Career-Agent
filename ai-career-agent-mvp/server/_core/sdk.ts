@@ -214,7 +214,7 @@ class SDKServer {
 
       if (
         !isNonEmptyString(openId) ||
-        (!isNonEmptyString(appId) || appId !== ENV.appId) ||
+        (ENV.appId && isNonEmptyString(appId) && appId !== ENV.appId) ||
         typeof name !== "string"
       ) {
         console.warn("[Auth] Session payload missing required fields");

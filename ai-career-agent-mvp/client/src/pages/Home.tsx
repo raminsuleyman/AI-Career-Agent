@@ -142,7 +142,7 @@ export default function Home() {
             <p className="mt-6 max-w-lg text-pretty text-base leading-7 text-secondary-foreground md:text-lg">CV-nizdən bacarıqları müəyyənləşdirin, uyğun internship-ləri görün, 7 günlük inkişaf planı qurun və müsahibəyə hazır olduğunuzu yoxlayın.</p>
             <div className="mt-8 grid max-w-md grid-cols-3 gap-3">
               {[["12", "demo elan"], ["7 gün", "fokus planı"], ["5 sual", "mock müsahibə"]].map(([value, label], i) => (
-                <div key={label} className="group rounded-xl border border-border/50 glassmorphism px-3 py-3 transition-colors hover:border-primary/50 hover:bg-card/80 animate-slide-up" style={{ animationDelay: \`\${0.2 + i * 0.1}s\` }}>
+                <div key={label} className="group rounded-xl border border-border/50 glassmorphism px-3 py-3 transition-colors hover:border-primary/50 hover:bg-card/80 animate-slide-up" style={{ animationDelay: `${0.2 + i * 0.1}s` }}>
                   <strong className="block text-lg font-semibold tracking-[-0.04em] transition-transform group-hover:scale-105 group-hover:text-accent origin-left">{value}</strong>
                   <span className="mt-0.5 block text-[11px] text-muted-foreground">{label}</span>
                 </div>
@@ -201,7 +201,7 @@ export default function Home() {
           <p className="mb-8 text-center text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">Bu axında nə alacaqsınız?</p>
           <div className="grid gap-4 md:grid-cols-3">
             {[["01", "Uyğunluq", "Bacarıqlarınıza uyğun demo internship-ləri görün."], ["02", "Prioritet", "Hədəf rol üçün ən vacib skill gap-ləri anlayın."], ["03", "Hazırlıq", "Plan və mock müsahibə ilə növbəti addımı müəyyən edin."]].map(([number, title, text], i) => (
-              <div key={number} className="group relative overflow-hidden rounded-2xl border border-border/50 glassmorphism p-6 transition-all hover:border-primary/40 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/10 animate-slide-up" style={{ animationDelay: \`\${0.4 + i * 0.15}s\` }}>
+              <div key={number} className="group relative overflow-hidden rounded-2xl border border-border/50 glassmorphism p-6 transition-all hover:border-primary/40 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/10 animate-slide-up" style={{ animationDelay: `${0.4 + i * 0.15}s` }}>
                 <div className="absolute -right-4 -top-4 size-24 rounded-full bg-primary/10 blur-2xl transition-transform group-hover:scale-150" />
                 <span className="relative z-10 block text-2xl font-bold text-primary/40 transition-colors group-hover:text-primary">{number}</span>
                 <div className="relative z-10 mt-4">

@@ -9,8 +9,4 @@ export const ENV = {
   get isProduction() { return process.env.NODE_ENV === "production"; },
   get forgeApiUrl() { return process.env.MANUS_API_URL ?? ""; },
   get forgeApiKey() { return process.env.MANUS_API_KEY ?? ""; },
-  // Google OAuth
-  get googleClientId() { return process.env.GOOGLE_CLIENT_ID ?? ""; },
-  get googleClientSecret() { return process.env.GOOGLE_CLIENT_SECRET ?? ""; },
-  get appBaseUrl() { return process.env.APP_BASE_URL ?? ""; },
 };

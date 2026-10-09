@@ -3,7 +3,6 @@ import express from "express";
 import { createServer } from "http";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
-import { registerGoogleAuthRoutes } from "./googleAuth";
 import { registerGuestAuthRoutes } from "./guestAuth";
 import { publicPlatformScript } from "./publicConfig";
 import { appRouter } from "../routers";
@@ -21,7 +20,6 @@ async function startServer() {
     res.set("Cache-Control", "no-store").type("application/javascript").send(publicPlatformScript());
   });
   registerOAuthRoutes(app);
-  registerGoogleAuthRoutes(app);
   registerGuestAuthRoutes(app);
   // tRPC API
   app.use(

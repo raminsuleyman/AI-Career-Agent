@@ -10,8 +10,13 @@ const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo";
 
 function getRedirectUri(req: Request): string {
-  const base = ENV.appBaseUrl || `${req.protocol}://${req.get("host")}`;
-  return `${base}/api/auth/google/callback`;
+  if (ENV.appBaseUrl) {
+    return `${ENV.appBaseUrl}/api/auth/google/callback`;
+  }
+  // Behind Railway/nginx proxy, use x-forwarded-proto or default to https
+  const proto = req.headers["x-forwarded-proto"] || "https";
+  const host = req.get("host");
+  return `${proto}://${host}/api/auth/google/callback`;
 }
 
 export function registerGoogleAuthRoutes(app: Express) {

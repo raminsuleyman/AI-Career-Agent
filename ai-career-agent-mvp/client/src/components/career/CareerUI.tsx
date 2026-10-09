@@ -10,17 +10,14 @@ import {
   ClipboardCheck,
   Code2,
   ExternalLink,
-  FileText,
   LayoutDashboard,
   Menu,
-  Plus,
   Sparkles,
   Target,
   Trash2,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
-import { getRole, roles, skills, type RoleSlug, type SkillEntry, type SkillLevel, type SkillSlug } from "@/data/career";
+import { getRole, roles, type RoleSlug, type SkillEntry } from "@/data/career";
 import { useCareer } from "@/context/CareerContext";
 
 export function BrandMark({ compact = false }: { compact?: boolean }) {
@@ -156,9 +153,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 export function PageGuard({ children }: { children: ReactNode }) {
-  const { hasAnalysis } = useCareer();
+  const { analysisId } = useCareer();
   const [, setLocation] = useLocation();
-  if (!hasAnalysis) {
+  if (!analysisId) {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-4 text-center">
         <div className="max-w-md rounded-2xl border border-border bg-card p-7">
@@ -174,14 +171,13 @@ export function PageGuard({ children }: { children: ReactNode }) {
 }
 
 export function DemoBanner() {
-  const { demoDismissed, dismissDemo } = useCareer();
-  if (demoDismissed) return null;
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
   return (
     <div className="mb-6 flex flex-wrap items-start gap-3 rounded-xl border border-info/30 bg-info/10 px-4 py-3 text-sm text-secondary-foreground">
       <CircleAlert className="mt-0.5 size-4 shrink-0 text-info" />
-      <p className="min-w-48 flex-1 leading-5"><strong className="font-medium text-info">Demo profil göstərilir.</strong> Real xidmətə qoşulmaq mümkün olmadıqda axını yoxlamaq üçün nümunə məlumatla davam edirik.</p>
-      <button type="button" onClick={() => toast.info("Real servis bu prototipdə qoşulu deyil; demo nəticələri aktiv saxlanıldı.")} className="rounded-lg border border-info/25 px-2.5 py-1.5 text-xs font-medium text-info transition hover:bg-info/10">Real nəticəni yenilə</button>
-      <button type="button" onClick={dismissDemo} className="self-center text-muted-foreground hover:text-foreground" aria-label="Demo bildirişini bağla"><X className="size-4" /></button>
+      <p className="min-w-48 flex-1 leading-5"><strong className="font-medium text-info">CV analizi tamamlandı.</strong> Aşkarlanan bacarıqlar və internship uyğunluğu real hesablamalara əsaslanır.</p>
+      <button type="button" onClick={() => setDismissed(true)} className="self-center text-muted-foreground hover:text-foreground" aria-label="Bildirişi bağla"><X className="size-4" /></button>
     </div>
   );
 }
@@ -196,34 +192,15 @@ export function LevelBars({ current, required, compact = false }: { current: num
   );
 }
 
-export function SkillChip({ skill, removable = true }: { skill: SkillEntry; removable?: boolean }) {
-  const { removeSkill, setSkillLevel } = useCareer();
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <div className={`group relative inline-flex items-center gap-2 rounded-full border ${skill.origin === "user" ? "border-dashed border-accent/50" : "border-border"} bg-secondary py-1 pl-3 pr-1.5 text-sm`}>
-      <button type="button" onClick={() => setExpanded((value) => !value)} className="flex items-center gap-2 text-left" aria-label={`${skill.name} səviyyəsini dəyiş`}>{skill.name}<LevelBars current={skill.level} compact /></button>
-      {removable && <button type="button" onClick={() => removeSkill(skill.slug)} className="grid size-5 place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label={`${skill.name} bacarığını sil`}><X className="size-3" /></button>}
-      {expanded && (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-20 min-w-40 rounded-xl border border-border bg-popover p-2 shadow-xl">
-          <p className="px-2 pb-1.5 text-[11px] text-muted-foreground">Səviyyəni seçin</p>
-          {[1, 2, 3, 4].map((level) => <button key={level} type="button" onClick={() => { setSkillLevel(skill.slug, level as SkillLevel); setExpanded(false); }} className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-xs hover:bg-secondary"><span>Səviyyə {level}</span><LevelBars current={level} compact /></button>)}
-        </div>
-      )}
-    </div>
-  );
+// SkillChip and AddSkillButton removed - skill editing now done via server API
+// These stubs are exported for backward compat but render nothing
+export function SkillChip({ skill }: { skill: SkillEntry }) {
+  return <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary py-1 pl-3 pr-2 text-sm">{skill.name}<LevelBars current={skill.level} compact /></span>;
 }
-
-export function AddSkillButton() {
-  const { addSkill, skills: currentSkills } = useCareer();
-  const [open, setOpen] = useState(false);
-  const available = (Object.keys(skills) as SkillSlug[]).filter((slug) => !currentSkills.some((skill) => skill.slug === slug));
-  return (
-    <div className="relative inline-block">
-      <button type="button" onClick={() => setOpen((value) => !value)} className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground transition hover:border-accent/60 hover:text-accent"><Plus className="size-3.5" /> Bacarıq əlavə et</button>
-      {open && <div className="absolute left-0 top-[calc(100%+8px)] z-20 w-56 rounded-xl border border-border bg-popover p-2 shadow-xl"><p className="px-2 pb-2 text-xs text-muted-foreground">Kataloqdan seçin</p><div className="max-h-48 overflow-auto">{available.map((slug) => <button key={slug} type="button" onClick={() => { addSkill(slug); setOpen(false); }} className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm hover:bg-secondary"><span>{skills[slug].name}</span><span className="text-[11px] text-muted-foreground">{skills[slug].category}</span></button>)}</div></div>}
-    </div>
-  );
+export function SkillBadge({ slug, name }: { slug: string; name: string }) {
+  return <span className="rounded-lg border border-border bg-secondary px-2.5 py-1 text-xs font-medium">{name}</span>;
 }
+export function AddSkillButton() { return null; }
 
 export function ScoreGauge({ score, label = "Career Readiness" }: { score: number; label?: string }) {
   const color = score >= 75 ? "#22c55e" : score >= 50 ? "#7c9bff" : "#f59e0b";
